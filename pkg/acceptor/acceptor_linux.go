@@ -9,6 +9,7 @@ import (
 	"sync/atomic"
 	"syscall"
 
+	"githun.com/policyd/pkg/chanutil"
 	"githun.com/policyd/pkg/handler"
 )
 
@@ -16,6 +17,7 @@ type Acceptor interface {
 	Start()
 	Stop()
 }
+
 type acceptor struct {
 	done     chan interface{}
 	started  atomic.Bool
@@ -59,13 +61,13 @@ func (a *acceptor) accept() {
 	defer syscall.Close(a.listenFd)
 
 	for {
-		if ischannelClosed(a.done) {
+		if chanutil.IschannelClosed(a.done) {
 			return
 		}
 		var events = make([]syscall.EpollEvent, 1024)
 		n, err := syscall.EpollWait(a.epollFd, events, -1)
 		if err != nil {
-			fmt.Println("Epoll: " + err.Error())
+			fmt.Println("EpollWait: " + err.Error())
 		} else {
 			for i := 0; i < n; i++ {
 				event := events[i]
@@ -94,13 +96,4 @@ func fdToConn(fd int) (net.Conn, error) {
 	f := os.NewFile(uintptr(fd), "")
 	defer f.Close()
 	return net.FileConn(f)
-}
-
-func ischannelClosed(c chan interface{}) bool {
-	select {
-	case _, ok := <-c:
-		return ok
-	default:
-		return false
-	}
 }
