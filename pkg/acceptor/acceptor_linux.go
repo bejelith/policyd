@@ -15,7 +15,6 @@ import (
 type Acceptor interface {
 	Start()
 	Stop()
-	Wait()
 }
 type acceptor struct {
 	done     chan interface{}
@@ -89,10 +88,6 @@ func (a *acceptor) Start() {
 
 func (a *acceptor) Stop() {
 
-}
-
-func (a *acceptor) Wait() {
-	<-a.done
 }
 
 func fdToConn(fd int) (net.Conn, error) {
