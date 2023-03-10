@@ -3,9 +3,9 @@ package main
 import (
 	"flag"
 
-	"githun.com/policyd/pkg/acceptor"
-	"githun.com/policyd/pkg/handler"
-	"githun.com/policyd/pkg/lifecycle"
+	"github.com/policyd/pkg/acceptor"
+	"github.com/policyd/pkg/handler"
+	"github.com/policyd/pkg/lifecycle"
 )
 
 var addr = flag.String("addr", "0.0.0.0", "Listen address")

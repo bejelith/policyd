@@ -1,6 +1,6 @@
 package handler
 
-import "githun.com/policyd/pkg/plugin"
+import "github.com/policyd/pkg/plugin"
 
 type MessageHandler func(plugin.RequestID, []string) *plugin.Response
 

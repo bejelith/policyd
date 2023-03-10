@@ -9,8 +9,8 @@ import (
 	"sync/atomic"
 	"syscall"
 
-	"githun.com/policyd/pkg/chanutil"
-	"githun.com/policyd/pkg/handler"
+	"github.com/policyd/pkg/chanutil"
+	"github.com/policyd/pkg/handler"
 )
 
 type Acceptor interface {

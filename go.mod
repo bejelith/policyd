@@ -1,1 +1,1 @@
-module githun.com/policyd
+module github.com/policyd

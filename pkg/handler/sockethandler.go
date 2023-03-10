@@ -5,8 +5,8 @@ import (
 	"net"
 	"sync"
 
-	"githun.com/policyd/pkg/chanutil"
-	"githun.com/policyd/pkg/lifecycle"
+	"github.com/policyd/pkg/chanutil"
+	"github.com/policyd/pkg/lifecycle"
 )
 
 type SocketHandler interface {

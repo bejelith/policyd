@@ -1,6 +1,6 @@
 package quota_plugin
 
-import "githun.com/policyd/pkg/plugin"
+import "github.com/policyd/pkg/plugin"
 
 type quota_plugin struct {
 }
