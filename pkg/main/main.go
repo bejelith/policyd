@@ -14,7 +14,7 @@ var port = flag.Int("port", 12345, "Listen port")
 func main() {
 	flag.Parse()
 	lifecycle := lifecycle.New()
-	socketHandler := handler.New(nil)
+	socketHandler := handler.New()
 	acceptor, _ := acceptor.New(socketHandler, *addr, *port)
 	lifecycle.Manage(acceptor)
 	lifecycle.Manage(socketHandler)

@@ -20,8 +20,8 @@ type socketHandler struct {
 	done           chan interface{}
 }
 
-func New(handler MessageHandler) SocketHandler {
-	return &socketHandler{handler, &sync.WaitGroup{}, make(chan interface{})}
+func New() SocketHandler {
+	return &socketHandler{handleMessage, &sync.WaitGroup{}, make(chan interface{})}
 }
 
 func (h *socketHandler) handle(con net.Conn) {
@@ -45,7 +45,8 @@ func (h *socketHandler) handle(con net.Conn) {
 		newMessage = false
 		if line == "" {
 			newMessage = true
-			writer.WriteString(h.messageHandler.Handle(lines))
+			response := h.messageHandler(1, lines)
+			writer.WriteString(response.Resp)
 			lines = []string{}
 		} else {
 			lines = append(lines, line)
