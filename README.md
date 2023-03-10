@@ -1,5 +1,5 @@
 # PolicyD
-It's just insane still be using Perl in 2023.
+It's just insane using Perl in 2023.
 
 ## Build
 
