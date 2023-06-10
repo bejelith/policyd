@@ -9,22 +9,22 @@ import (
 	"github.com/policyd/pkg/lifecycle"
 )
 
-type SocketHandler interface {
+type ManagedHandler interface {
 	lifecycle.Managed
 	Handle(net.Conn)
 }
 
-type socketHandler struct {
+type SocketHandler struct {
 	messageHandler MessageHandler
 	waitGroup      *sync.WaitGroup
 	done           chan interface{}
 }
 
-func New() SocketHandler {
-	return &socketHandler{handleMessage, &sync.WaitGroup{}, make(chan interface{})}
+func New() *SocketHandler {
+	return &SocketHandler{handleMessage, &sync.WaitGroup{}, make(chan interface{})}
 }
 
-func (h *socketHandler) handle(con net.Conn) {
+func (h *SocketHandler) handle(con net.Conn) {
 	h.waitGroup.Add(1)
 	defer h.waitGroup.Done()
 	lines := make([]string, 1024)
@@ -34,7 +34,7 @@ func (h *socketHandler) handle(con net.Conn) {
 	reader := bufio.NewReader(con)
 	writer := bufio.NewWriter(con)
 	for {
-		if chanutil.IschannelClosed(h.done) && newMessage {
+		if chanutil.IsChannelOpen(h.done) && newMessage {
 			con.Close()
 			return
 		}
@@ -54,15 +54,15 @@ func (h *socketHandler) handle(con net.Conn) {
 	}
 }
 
-func (h *socketHandler) Handle(con net.Conn) {
+func (h *SocketHandler) Handle(con net.Conn) {
 	go h.handle(con)
 }
 
-func (h *socketHandler) Start() {
+func (h *SocketHandler) Start() {
 
 }
 
-func (h *socketHandler) Stop() {
+func (h *SocketHandler) Stop() {
 	close(h.done)
 	h.waitGroup.Wait()
 }
