@@ -1,34 +1,41 @@
 package plugin
 
-import "sync"
+import (
+	"sync"
 
-var plugins = []Plugin{}
+	log "log/slog"
+
+	"github.com/policyd/pkg/plugin/quota"
+	"github.com/policyd/pkg/plugin/types"
+	"gopkg.in/yaml.v3"
+)
+
+var plugins = []types.Plugin{
+	&quota.Plugin{},
+}
 var lock = sync.RWMutex{}
 
-type RequestID int64
+func Configure(config yaml.Node) {
+	pluginConfigs := map[string]yaml.Node{}
 
-type Plugin interface {
-	PostMessageReceived(RequestID, []string)
-	PreResponse(RequestID, *Response) *Response
+	if err := config.Decode(pluginConfigs); err != nil {
+		log.Error("failed to parse plugin configuration", "error", err)
+	}
+
+	for _, plugin := range plugins {
+		log.Info("registering plugin", "plugin", plugin.Name())
+		lock.Lock()
+		defer lock.Unlock()
+		if err := plugin.Config(pluginConfigs); err != nil {
+			log.Error("could not load plugin", "plugin", plugin.Name(), "error", err)
+		}
+	}
 }
 
-type Response struct {
-	Resp     string
-	Failures []error
-}
-
-var OkResponse = &Response{Resp: "ok"}
-
-func Register(plugin Plugin) {
-	lock.Lock()
-	defer lock.Unlock()
-	plugins = append(plugins, plugin)
-}
-
-func Enumerate() []Plugin {
+func Enumerate() []types.Plugin {
 	lock.RLock()
 	defer lock.RUnlock()
-	n := make([]Plugin, len(plugins))
+	n := make([]types.Plugin, len(plugins))
 	copy(n, plugins)
 	return n
 }

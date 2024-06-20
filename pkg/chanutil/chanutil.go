@@ -1,11 +1,11 @@
 package chanutil
 
-func IsChannelOpen(c chan interface{}) bool {
+func IsChannelClosed(c chan interface{}) bool {
 	select {
-	case _, isOpen := <-c:
-		return isOpen
+	case _, open := <-c:
+		return !open
 	default:
 		// Channel open with no elements
-		return true
+		return false
 	}
 }
