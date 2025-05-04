@@ -14,14 +14,13 @@ type Managed interface {
 	Stop()
 }
 
-type LifecycleI interface {
-	Manage(Managed)
-	Start()
-	Stop()
+type Lifecycle interface {
+	Managed
+	Register(Managed)
 	Wait()
 }
 
-type Lifecycle struct {
+type LifecycleService struct {
 	objects []Managed
 	signals chan os.Signal
 	started bool
@@ -29,8 +28,8 @@ type Lifecycle struct {
 	lock    sync.Mutex
 }
 
-func New() *Lifecycle {
-	l := &Lifecycle{
+func New() *LifecycleService {
+	l := &LifecycleService{
 		[]Managed{},
 		make(chan os.Signal, 1),
 		false,
@@ -40,7 +39,7 @@ func New() *Lifecycle {
 	return l
 }
 
-func (l *Lifecycle) Manage(object Managed) {
+func (l *LifecycleService) Register(object Managed) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 	if l.started {
@@ -49,7 +48,7 @@ func (l *Lifecycle) Manage(object Managed) {
 	l.objects = append(l.objects, object)
 }
 
-func (l *Lifecycle) Start() {
+func (l *LifecycleService) Start() {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 	if l.started {
@@ -68,11 +67,11 @@ func (l *Lifecycle) Start() {
 	go l.handleSignals()
 }
 
-func (l *Lifecycle) Wait() {
+func (l *LifecycleService) Wait() {
 	<-l.done
 }
 
-func (l *Lifecycle) Stop() {
+func (l *LifecycleService) Stop() {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 	for _, o := range l.objects {
@@ -81,7 +80,7 @@ func (l *Lifecycle) Stop() {
 	close(l.done)
 }
 
-func (l *Lifecycle) handleSignals() {
+func (l *LifecycleService) handleSignals() {
 	s := <-l.signals
 	log.Info("Signal received. Terminating\n", "signal", s)
 	l.Stop()

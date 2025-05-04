@@ -19,7 +19,7 @@ func TestOpenChannel(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.err, func(t *testing.T) {
 			c := test.f()
-			assert.Equal(t, test.result, IsChannelClosed(c))
+			assert.Equal(t, test.result, IsClosed(c))
 		})
 	}
 }

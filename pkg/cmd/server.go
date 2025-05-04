@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"net"
+	"os"
 
 	log "log/slog"
 
@@ -19,11 +20,14 @@ var logLevel = log.LevelInfo
 func main() {
 	flag.Func("loglevel", "logevel value", setLevel)
 	flag.Parse()
-	log.SetLogLoggerLevel(logLevel)
+	log.SetDefault(log.New(log.NewTextHandler(os.Stdout, &log.HandlerOptions{
+		Level: logLevel,
+		AddSource: true,
+	})))
 
 	//plugin.Register(&quota.Plugin{})
 
-	lifecycle := lifecycle.New()
+	lc := lifecycle.New()
 	connHandler := handler.NewConnHandler()
 	listener, err := setupListener(*addr)
 	if err != nil {
@@ -31,11 +35,11 @@ func main() {
 	}
 	defer listener.Close()
 	acceptor, _ := acceptor.New(connHandler, listener)
-	lifecycle.Manage(acceptor)
-	lifecycle.Manage(connHandler)
+	lc.Register(acceptor)
+	lc.Register(connHandler)
 
-	lifecycle.Start()
-	lifecycle.Wait()
+	lc.Start()
+	lc.Wait()
 }
 
 func setLevel(s string) error {

@@ -1,6 +1,6 @@
 package chanutil
 
-func IsChannelClosed(c chan interface{}) bool {
+func IsClosed(c chan interface{}) bool {
 	select {
 	case _, open := <-c:
 		return !open

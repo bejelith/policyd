@@ -1,12 +1,9 @@
 package acceptor
 
 import (
-	"fmt"
+	log "log/slog"
 	"net"
 	"sync"
-	"sync/atomic"
-
-	log "log/slog"
 )
 
 var defaultLoops = 2
@@ -21,36 +18,41 @@ type Managed interface {
 }
 
 type Acceptor struct {
-	goroutines *sync.WaitGroup
+	wg *sync.WaitGroup
 	handler    Handler
 	listener   net.Listener
 	loops      int
 	started    bool
-	stop       *atomic.Bool
+	stop       chan struct{}
 }
 
 func New(handler Handler, listener net.Listener) (*Acceptor, error) {
 	return &Acceptor{
-		goroutines: &sync.WaitGroup{},
+		wg: &sync.WaitGroup{},
 		listener:   listener,
 		handler:    handler,
-		stop:       &atomic.Bool{},
+		stop:       make(chan struct{}),
 		loops:      defaultLoops,
 	}, nil
 }
 
 func (a *Acceptor) accept() {
-	for i := 0; i < a.loops; i++ {
-		a.goroutines.Add(1)
+	for range a.loops {
+		a.wg.Add(1)
 		go func() {
-			defer a.goroutines.Done()
-			for !a.stop.Load() {
-				conn, err := a.listener.Accept()
-				if err != nil {
-					log.Error("accept", "error", err)
+			defer a.wg.Done()
+			for {
+				select {
+				case <-a.stop:
 					return
+				default:
+					conn, err := a.listener.Accept()
+					if err != nil {
+						log.Error("accept", "error", err)
+						return
+					}
+					go a.handler.Handle(conn)
 				}
-				go a.handler.Handle(conn)
 			}
 		}()
 	}
@@ -65,8 +67,7 @@ func (a *Acceptor) Start() {
 }
 
 func (a *Acceptor) Stop() {
-	a.stop.Store(true)
+	close(a.stop)
 	a.listener.Close()
-	a.goroutines.Wait()
-	fmt.Println("terminated")
+	a.wg.Wait()
 }

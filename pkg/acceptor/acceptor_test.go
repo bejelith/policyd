@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var addr = "localhost:12345"
+var addr = "localhost:4589"
 
 type MockHandler struct {
 }
@@ -24,9 +24,6 @@ func (m *MockHandler) Handle(conn net.Conn) {
 func setupListener(t testing.TB, addr string) net.Listener {
 	t.Helper()
 	l := net.ListenConfig{}
-	if addr == "" {
-		addr = "localhost:0"
-	}
 	listener, err := l.Listen(context.TODO(), "tcp", addr)
 	if err != nil {
 		t.Fatal("failed to open listener", err)

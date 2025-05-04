@@ -23,7 +23,7 @@ func (m *managed) Stop() {
 func TestStart(t *testing.T) {
 	l := New()
 	m := &managed{}
-	l.Manage(m)
+	l.Register(m)
 	l.Start()
 	assert.Equal(t, 1, m.startCount)
 	l.Start()
@@ -43,7 +43,7 @@ func TestManageAfterStar(t *testing.T) {
 	l := New()
 	m := &managed{}
 	l.Start()
-	l.Manage(m)
+	l.Register(m)
 	assert.Zero(t, len(l.objects), "No supervised objects should be present")
 	assert.Equal(t, 0, m.startCount)
 }
