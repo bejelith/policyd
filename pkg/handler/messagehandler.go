@@ -1,16 +1,32 @@
 package handler
 
-import "github.com/policyd/pkg/plugin"
+import (
+	log "log/slog"
 
-type MessageHandler func(plugin.RequestID, []string) *plugin.Response
+	"github.com/policyd/pkg/plugin"
 
-func handleMessage(id plugin.RequestID, message []string) *plugin.Response {
+	"github.com/policyd/pkg/types"
+)
+
+var defaultMessageHandler = handleMessage
+
+func DefaultMessageHander() MessageHandler {
+	return defaultMessageHandler
+}
+
+type MessageHandler func(types.RequestID, types.Message) *types.Response
+
+func handleMessage(id types.RequestID, message types.Message) *types.Response {
+	log.Debug("received", "message", message)
 	for _, p := range plugin.Enumerate() {
 		p.PostMessageReceived(id, message)
 	}
-	response := &plugin.Response{}
+	response := types.OkResponse
 	for _, p := range plugin.Enumerate() {
 		response = p.PreResponse(id, response)
+		if response.Resp != types.OkResponse.Resp {
+			return response
+		}
 	}
 	return response
 }

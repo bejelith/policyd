@@ -1,20 +1,26 @@
 package lifecycle
 
 import (
-	"fmt"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
+
+	log "log/slog"
 )
 
-type Lifecycle interface {
-	Manage(Managed)
+type Managed interface {
 	Start()
+	Stop()
+}
+
+type Lifecycle interface {
+	Managed
+	Register(Managed)
 	Wait()
 }
 
-type lifecycle struct {
+type LifecycleService struct {
 	objects []Managed
 	signals chan os.Signal
 	started bool
@@ -22,8 +28,8 @@ type lifecycle struct {
 	lock    sync.Mutex
 }
 
-func New() Lifecycle {
-	l := &lifecycle{
+func New() *LifecycleService {
+	l := &LifecycleService{
 		[]Managed{},
 		make(chan os.Signal, 1),
 		false,
@@ -33,7 +39,7 @@ func New() Lifecycle {
 	return l
 }
 
-func (l *lifecycle) Manage(object Managed) {
+func (l *LifecycleService) Register(object Managed) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 	if l.started {
@@ -42,33 +48,40 @@ func (l *lifecycle) Manage(object Managed) {
 	l.objects = append(l.objects, object)
 }
 
-func (l *lifecycle) Start() {
+func (l *LifecycleService) Start() {
+	l.lock.Lock()
+	defer l.lock.Unlock()
 	if l.started {
 		return
 	}
+	l.started = true
 	signal.Notify(l.signals,
 		syscall.SIGHUP,
 		syscall.SIGINT,
 		syscall.SIGTERM,
 		syscall.SIGQUIT)
-	l.started = true
-	go l.manage()
-}
 
-func (l *lifecycle) Wait() {
-	<-l.done
-}
-
-func (l *lifecycle) manage() {
-	l.lock.Lock()
-	defer l.lock.Unlock()
 	for _, obj := range l.objects {
 		obj.Start()
 	}
-	s := <-l.signals
-	fmt.Printf("Signal %s received. Terminating\n", s)
-	for _, obj := range l.objects {
-		obj.Stop()
+	go l.handleSignals()
+}
+
+func (l *LifecycleService) Wait() {
+	<-l.done
+}
+
+func (l *LifecycleService) Stop() {
+	l.lock.Lock()
+	defer l.lock.Unlock()
+	for _, o := range l.objects {
+		o.Stop()
 	}
 	close(l.done)
+}
+
+func (l *LifecycleService) handleSignals() {
+	s := <-l.signals
+	log.Info("Signal received. Terminating\n", "signal", s)
+	l.Stop()
 }

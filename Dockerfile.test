@@ -1,8 +1,0 @@
-FROM golang:alpine3.16 AS build
-
-ENV GOPATH=""
-
-COPY ./ .
-
-#ENTRYPOINT [ "go", "test"]
-CMD ["./pkg/..." ]

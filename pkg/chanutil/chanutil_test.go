@@ -2,6 +2,8 @@ package chanutil
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestOpenChannel(t *testing.T) {
@@ -10,16 +12,14 @@ func TestOpenChannel(t *testing.T) {
 		result bool
 		f      func() chan interface{}
 	}{
-		{"Channel should be closed", false, closedChan},
-		{"Channel should be open", true, openChan},
-		{"Channel should be open with elements", true, openChanWithElement},
+		{"Channel should be closed", true, closedChan},
+		{"Channel should be open", false, openChan},
+		{"Channel should be open with elements", false, openChanWithElement},
 	}
 	for _, test := range tests {
 		t.Run(test.err, func(t *testing.T) {
 			c := test.f()
-			if IsChannelOpen(c) != test.result {
-				t.Fatal("Failed")
-			}
+			assert.Equal(t, test.result, IsClosed(c))
 		})
 	}
 }
