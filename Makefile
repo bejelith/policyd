@@ -1,10 +1,13 @@
 GO=go
 BUILDDIR=.build
 COVERAGEFILE=$(BUILDDIR)/coverage
+ifndef DOCKER
+DOCKER=podman
+endif
 BIN=$(BUILDDIR)/policyd
 TESTCACHE=$(BUILDDIR)/.test_timestmap
 PLATFORMS=darwin linux
-ARCHS=386 amd64 arm64
+ARCHS=amd64 arm64
 MAINPACKAGE=github.com/policyd/pkg/cmd
 SOURCES=$(wildcard pkg/**/*.go)
 
@@ -23,13 +26,20 @@ coverage: $(COVERAGEFILE)
 
 $(BIN): $(BUILDDIR)
 	@$(GO) build -o $(BIN) $(MAINPACKAGE)
-	cp $(BIN) policyd
+	@cp $(BIN) policyd
 
-build: $(BIN) test
+build: test $(BIN)
 
-build_all: $(BUILDDIR)
+.PHONY: all
+all: build docker $(BUILDDIR)
 	$(foreach GOOS, $(PLATFORMS),\
-	$(foreach GOARCH, $(ARCHS), $(shell export GOOS=$(GOOS); export GOARCH=$(GOARCH); $(GO) build -v -o $(BIN)-$(GOOS)-$(GOARCH) $(MAINPACKAGE))))
+	$(foreach GOARCH, $(ARCHS), $(MAKE) buildarch GOOS=$(GOOS) GOARCH=$(GOARCH);))
+
+buildarch: 
+	GOARCH=$(GOARCH) GOOS=$(GOOS) $(GO) build -v -o $(BIN)-$(GOOS)-$(GOARCH) $(MAINPACKAGE)
+
+docker:
+	$(foreach GOARCH, $(ARCHS), $(DOCKER) build -f Dockerfile --build-arg BIN=$(BIN)-$(GOARCH) -t policyd-$(GOARCH) .;)
 
 .PHONY: clean
 clean:
